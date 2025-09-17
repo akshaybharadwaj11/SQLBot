@@ -6,3 +6,6 @@ evaluate
 bitsandbytes
 trl
 peft
+fastapi
+uvicorn
+sqlparse

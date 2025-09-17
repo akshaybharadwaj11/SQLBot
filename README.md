@@ -39,5 +39,9 @@ cd SQLBot
 pip install -r requirements.txt
 ```
 
+## Training
+```bash
+python train.py --train_file data/train.jsonl --valid_file data/valid.jsonl \
+  --output_dir outputs/lora-adapter --base_model meta-llama/Llama-2-7b
 
 
