@@ -3,6 +3,7 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from peft import PeftModel
+import uvicorn
 
 app = FastAPI()
 
@@ -38,5 +39,4 @@ if __name__ == "__main__":
     app.state.adapter_path = args.adapter_path
     app.state.tokenizer_id = args.tokenizer_id or args.base_model
 
-    import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=args.port)
