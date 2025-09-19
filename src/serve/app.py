@@ -1,9 +1,20 @@
 import argparse
 from fastapi import FastAPI
 from pydantic import BaseModel
-from transformers import AutoTokenizer, AutoModelForCausalLM
+from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
 from peft import PeftModel
 import uvicorn
+import torch
+
+if torch.backends.mps.is_available():
+    device = torch.device("mps")
+    print("✅ Using Apple Silicon GPU (MPS)")
+elif torch.cuda.is_available():
+    device = torch.device("cuda")
+    print("✅ Using NVIDIA CUDA GPU")
+else:
+    device = torch.device("cpu")
+    print("⚠️ Using CPU (slow)")
 
 app = FastAPI()
 
@@ -15,10 +26,20 @@ class Req(BaseModel):
 def load_model():
     global tokenizer, model
     tokenizer = AutoTokenizer.from_pretrained(app.state.tokenizer_id)
+    kwargs = {"device_map": "auto"}
+
+    if torch.cuda.is_available():
+        print("✅ CUDA detected. Loading model in 8-bit mode.")
+        quant_config = BitsAndBytesConfig(load_in_8bit=True)
+        kwargs["quantization_config"] = quant_config
+    else:
+        print("⚠️ CUDA not available. Loading model in float32 (CPU mode). "
+              "This may be slow for large models.")
     base_model = AutoModelForCausalLM.from_pretrained(
-        app.state.base_model, device_map="auto", load_in_8bit=True
+        app.state.base_model, **kwargs
     )
     model = PeftModel.from_pretrained(base_model, app.state.adapter_path)
+    model.to(device)
     model.eval()
 
 @app.post("/generate_sql")
